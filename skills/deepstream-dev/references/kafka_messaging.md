@@ -57,12 +57,12 @@ sudo apt-get install -y mosquitto-clients    # CLI tools for testing
 **IMPORTANT**: `nvmsgbroker` is a **SINK component** that terminates the pipeline branch. It cannot have downstream components.
 
 For **headless pipelines** (Kafka only, no display):
-```
+```text
 Source -> Decoder -> Muxer -> Inference -> Tracker -> Message Converter -> Message Broker (sink)
 ```
 
 For **pipelines with both Kafka and display**, use `tee` to split paths:
-```
+```text
 Source -> Decoder -> Muxer -> Inference -> Tracker -> Tee
                                                       |-> [Metadata Branch] Message Converter -> Message Broker (sink)
                                                       |-> [Video Branch] Tiler -> OSD -> Converter -> Renderer (sink)
@@ -398,7 +398,7 @@ def kafka_legacy_custom_generator(video_paths, infer_config, kafka_config, label
 #### Kafka Broker Configuration File
 
 **kafka_broker_config.txt**:
-```
+```ini
 [broker]
 enable=1
 broker-ip-port=localhost:9092
@@ -413,7 +413,7 @@ topic=deepstream-analytics
 #### Message Converter Configuration File
 
 **msgconv_config.txt**:
-```
+```ini
 [message-converter]
 enable=1
 # Message format: deepstream or custom
@@ -584,7 +584,7 @@ class KafkaMetadataSender(BatchMetadataOperator):
 
     def _on_send_error(self, exception):
         """Callback for failed message send"""
-        print(f"Failed to send message to Kafka: {exception}")
+        print(f"Kafka publish failed: {exception}")
         self.error_count += 1
 
     def flush(self):
@@ -909,7 +909,7 @@ def test_kafka_consumer(bootstrap_servers, topic):
 
 ## Architecture
 
-```
+```text
 Pipeline -> nvmsgconv -> nvmsgbroker -> External Broker
               |              |
               |              +-- Protocol Adaptor Library
@@ -1031,6 +1031,17 @@ pipeline.add("nvmsgconv", "msgconv", {
 | 1 | `PAYLOAD_DEEPSTREAM_MINIMAL` | Minimal schema - multiple objects in single JSON payload |
 | 2 | `PAYLOAD_DEEPSTREAM_PROTOBUF` | Protobuf encoded - multiple objects in single payload |
 | 256 | `PAYLOAD_CUSTOM` | Custom schema using msg2p-lib |
+
+### Segmentation Payload Contract
+
+When a consumer needs segmentation data:
+
+1. Declare whether the payload needs per-object masks, a full-frame mask, or both; preserve normal object metadata.
+2. Instance masks on object metadata are bbox-local. For a full-frame payload, give the serializer an explicit frame mask or preserved inference tensors in a declared frame grid; do not reconstruct it from tracker-updated objects unless that is the intended output.
+3. If the selected schema has no mask field, use a compatible serializer extension. Payload type is a consumer contract, not a shortcut for carrying masks.
+4. Decode a real payload and verify its objects, mask representation, dimensions, and coordinate space.
+
+Note that OSD can render instance-mask metadata, but `nvmsgconv` does not serialize it automatically.
 
 ### Pipeline Usage
 
@@ -1301,24 +1312,32 @@ pipeline.add("nvmsgbroker", "msgbroker", {
 
 ```bash
 # Add Confluent repository
-sudo mkdir -p /etc/apt/keyrings
-wget -qO - https://packages.confluent.io/deb/7.8/archive.key | gpg \
-  --dearmor | sudo tee /etc/apt/keyrings/confluent.gpg > /dev/null
+sudo mkdir -p /usr/share/confluent-repo
+wget -qO /tmp/confluent-archive.key https://packages.confluent.io/deb/7.8/archive.key
+gpg --dearmor --output /tmp/confluent.gpg /tmp/confluent-archive.key
+sudo cp /tmp/confluent.gpg /usr/share/confluent-repo/confluent.gpg
+sudo chmod 0644 /usr/share/confluent-repo/confluent.gpg
+rm -f /tmp/confluent-archive.key /tmp/confluent.gpg
 
 CP_DIST=$(lsb_release -cs)
-echo "Types: deb
+cat <<EOF >/tmp/confluent-platform.sources
+Types: deb
 URIs: https://packages.confluent.io/deb/8.0
 Suites: stable
 Components: main
 Architectures: $(dpkg --print-architecture)
-Signed-by: /etc/apt/keyrings/confluent.gpg
+Signed-By: /usr/share/confluent-repo/confluent.gpg
 
 Types: deb
 URIs: https://packages.confluent.io/clients/deb/
 Suites: ${CP_DIST}
 Components: main
 Architectures: $(dpkg --print-architecture)
-Signed-By: /etc/apt/keyrings/confluent.gpg" | sudo tee /etc/apt/sources.list.d/confluent-platform.sources > /dev/null
+Signed-By: /usr/share/confluent-repo/confluent.gpg
+EOF
+sudo cp /tmp/confluent-platform.sources /etc/apt/sources.list.d/confluent-platform.sources
+sudo chmod 0644 /etc/apt/sources.list.d/confluent-platform.sources
+rm -f /tmp/confluent-platform.sources
 
 # Install dependencies
 sudo apt-get update
@@ -1646,7 +1665,7 @@ sudo make install
 #### Connection String
 
 Full Azure IoT Hub connection string:
-```
+```text
 HostName=<my-hub>.azure-devices.net;DeviceId=<device_id>;SharedAccessKey=<my-policy-key>
 ```
 
@@ -1810,8 +1829,8 @@ Multiple objects in single JSON payload:
 
 ```bash
 # Setup logger
-chmod u+x /opt/nvidia/deepstream/deepstream/sources/tools/nvds_logger/setup_nvds_logger.sh
-sudo /opt/nvidia/deepstream/deepstream/sources/tools/nvds_logger/setup_nvds_logger.sh
+chmod u+x <DS_ROOT>/src/utils/nvds_logger/setup_nvds_logger.sh
+sudo <DS_ROOT>/src/utils/nvds_logger/setup_nvds_logger.sh
 
 # View logs
 tail -f /tmp/nvds/ds.log

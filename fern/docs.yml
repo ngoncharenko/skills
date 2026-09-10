@@ -11,9 +11,8 @@ title: NVIDIA Skill Documentation
 global-theme: nvidia
 
 navbar-links:
-  - type: minimal
-    href: https://github.com/NVIDIA/skills
-    text: GitHub
+  - type: github
+    value: https://github.com/NVIDIA/skills
 
 logo:
   right-text: Skills
@@ -31,6 +30,9 @@ navigation:
       - page: Scan Agent Skills Before Installation
         path: ../docs/scanning-agent-skills.mdx
         slug: scanning-agent-skills
+      - page: Evaluate Agent Skills Before Publication
+        path: ../docs/evaluating-agent-skills.mdx
+        slug: evaluating-agent-skills
       - page: Verify Signed Agent Skills
         path: ../docs/signing-agent-skills.mdx
         slug: signing-agent-skills
@@ -43,3 +45,8 @@ navigation:
       - page: Advanced Installation
         path: ../docs/advanced-install.mdx
         slug: advanced-install
+  - section: SkillEvaluator
+    skip-slug: true
+    contents:
+      - link: Overview
+        href: https://docs.nvidia.com/skills/skillevaluator

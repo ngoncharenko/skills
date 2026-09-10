@@ -13,15 +13,18 @@ This document provides comprehensive best practices, design patterns, and optimi
 **Best Practice**: Build pipelines in modular, reusable functions.
 
 ```python
+import os
+
 def create_source_pipeline(video_path, num_streams=1):
     """Create reusable source pipeline"""
     sources = []
     for i in range(num_streams):
-        sources.extend([
-            {"element": "filesrc", "name": f"src{i}", "props": {"location": video_path}},
-            {"element": "h264parse", "name": f"parser{i}"},
-            {"element": "nvv4l2decoder", "name": f"decoder{i}"}
-        ])
+        uri = "file://" + os.path.abspath(video_path)
+        sources.append({
+            "element": "nvurisrcbin",
+            "name": f"src{i}",
+            "props": {"uri": uri}
+        })
     return sources
 
 def create_inference_pipeline(config_files):
@@ -619,7 +622,8 @@ class PerformanceTest:
         
         def frame_callback(batch_meta):
             nonlocal frame_count
-            frame_count += len(batch_meta.frame_items)
+            for _ in batch_meta.frame_items:
+                frame_count += 1
         
         pipeline.attach("infer", Probe("fps", frame_callback))
         pipeline.start()
@@ -644,11 +648,11 @@ class PerformanceTest:
 import os
 from pathlib import Path
 
-class EnvironmentConfig:
-    """Load configuration based on environment"""
+class DeploymentConfig:
+    """Load configuration for the active deployment profile"""
     def __init__(self):
-        self.env = os.getenv("DEEPSTREAM_ENV", "development")
-        self.config_dir = Path("/etc/deepstream") / self.env
+        self.profile = os.environ.get("DEEPSTREAM_PROFILE", "development")
+        self.config_dir = Path("/etc/deepstream") / self.profile
     
     def get_config_path(self, config_name):
         """Get configuration file path"""
@@ -656,7 +660,7 @@ class EnvironmentConfig:
     
     def get_model_path(self, model_name):
         """Get model file path"""
-        return Path("/opt/models") / self.env / model_name
+        return Path("/opt/models") / self.profile / model_name
 ```
 
 ### Logging Best Practices
@@ -834,7 +838,7 @@ except Exception as e:
 
 **Bad** - Pipeline stuck in PAUSED:
 ```python
-# ❌ WRONG - Only display sink has async=0, Kafka sink is missing it
+# WRONG - Only display sink has async=0, Kafka sink is missing it
 # Pipeline will be STUCK IN PAUSED STATE!
 
 # Tee split
@@ -857,7 +861,7 @@ pipeline.add("nveglglessink", "sink", {
 
 **Good** - All sinks have async=0:
 ```python
-# ✅ CORRECT - ALL sinks have async=0
+# CORRECT - ALL sinks have async=0
 
 # Tee split
 pipeline.add("tee", "tee")
@@ -987,10 +991,10 @@ TypeError: object of type 'iterator' has no len()
 
 **Bad Code**:
 ```python
-# ❌ WRONG - Causes crash
+# WRONG - Causes crash
 count = len(frame_meta.object_items)
 
-# ❌ WRONG - Second loop is empty (iterator already consumed)
+# WRONG - Second loop is empty (iterator already consumed)
 for obj in frame_meta.object_items:
     process(obj)
 for obj in frame_meta.object_items:
@@ -999,7 +1003,7 @@ for obj in frame_meta.object_items:
 
 **Correct Code**:
 ```python
-# ✅ CORRECT - Count while iterating
+# CORRECT - Count while iterating
 obj_count = 0
 for obj in frame_meta.object_items:
     obj_count += 1
@@ -1017,17 +1021,17 @@ Configuration file parsing failed
 
 **Common Mistakes**:
 ```yaml
-# ❌ WRONG - Incorrect section name (should be 'property', not 'model')
+# WRONG - Incorrect section name (should be 'property', not 'model')
 model:
   model-engine-file: /path/to/model.engine
   batch-size: 1
 
-# ❌ WRONG - Mixing formats (YAML syntax in .txt file or vice versa)
+# WRONG - Mixing formats (YAML syntax in .txt file or vice versa)
 ```
 
 **Correct YAML Config** (`.yml`):
 ```yaml
-# ✅ CORRECT YAML format
+# CORRECT YAML format
 property:
   gpu-id: 0
   onnx-file: /opt/nvidia/deepstream/deepstream/samples/models/Primary_Detector/resnet18_trafficcamnet_pruned.onnx
@@ -1045,7 +1049,7 @@ class-attrs-all:
 
 **Correct INI-style Config** (`.txt`):
 ```ini
-# ✅ CORRECT INI-style format
+# CORRECT INI-style format
 [property]
 gpu-id=0
 onnx-file=/opt/nvidia/deepstream/deepstream/samples/models/Primary_Detector/resnet18_trafficcamnet_pruned.onnx
@@ -1074,7 +1078,7 @@ pre-cluster-threshold=0.2
 **Correct Model Paths**:
 ```
 /opt/nvidia/deepstream/deepstream/samples/models/Primary_Detector/
-├── resnet18_trafficcamnet_pruned.onnx    # ✅ Use this ONNX model
+├── resnet18_trafficcamnet_pruned.onnx    # Use this ONNX model
 ├── labels.txt                              # Class labels
 └── cal_trt.bin                            # INT8 calibration (optional)
 ```
@@ -1094,7 +1098,7 @@ labelfile-path=/opt/nvidia/deepstream/deepstream/samples/models/Primary_Detector
 
 **Unnecessary Code**:
 ```python
-# ❌ UNNECESSARY - nvv4l2decoder already outputs NVMM format
+# UNNECESSARY - nvv4l2decoder already outputs NVMM format
 pipeline.add("nvv4l2decoder", "decoder")
 pipeline.add("nvvideoconvert", "conv")  # Not needed!
 pipeline.add("nvstreammux", "mux")
@@ -1102,7 +1106,7 @@ pipeline.add("nvstreammux", "mux")
 
 **Correct Code**:
 ```python
-# ✅ CORRECT - Direct connection, no converter needed
+# CORRECT - Direct connection, no converter needed
 pipeline.add("nvv4l2decoder", "decoder")
 pipeline.add("nvstreammux", "mux")
 pipeline.link(("decoder", "mux"), ("", "sink_%u"))
@@ -1166,4 +1170,3 @@ Following these best practices and patterns will help you build robust, performa
    - **KNOW** that `nvv4l2decoder` outputs NVMM format (no converter needed before nvstreammux)
 
 These practices ensure your DeepStream applications are production-ready and scalable.
-
