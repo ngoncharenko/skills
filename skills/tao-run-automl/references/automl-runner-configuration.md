@@ -77,7 +77,7 @@ result = runner.run(
 ### VirtualEnvSDK (containerless venv runs)
 
 Model skills with `container_image: null` and `execution.type: python_script`
-(the NV-Tesseract Forecasting and AD Diffusion skills) run trials as local
+(the Kumo-Forecast and Kumo-Anomaly skills) run trials as local
 Python processes instead of containers. Their SDK is `VirtualEnvSDK`, and
 unlike the credential-reading platform SDKs it takes constructor arguments:
 
@@ -98,7 +98,7 @@ Full signature: `VirtualEnvSDK(venv_path, work_dir=None, state_file=None)`.
 > is omitted the SDK resolves it to `$TAO_SDK_STATE_DIR/virtualenv`, or
 > `~/.tao_sdk/virtualenv` when that env var is unset, and creates
 > `<work_dir>/jobs/` on construction. Every trial's checkpoints then land under
-> `$HOME` - roughly 1.4 GB per NV-Tesseract Forecasting trial. Always pass an
+> `$HOME` - roughly 1.4 GB per Kumo-Forecast trial. Always pass an
 > explicit `work_dir` on a filesystem with room for
 > `automl_max_recommendations` checkpoints. Setting `TAO_SDK_STATE_DIR`
 > relocates the default, but an explicit `work_dir` is the reviewable form and
@@ -208,7 +208,7 @@ For `llm`, `hybrid`, or `autoresearch`, use the same generic runner shape as abo
 1. `automl_settings` keys: `llm_endpoint`, `llm_model`, `llm_api_key`; aliases `base_url`, `model`, and `api_key` are also accepted.
 2. Environment variables: `AUTOML_LLM_ENDPOINT`, `AUTOML_LLM_MODEL`, `AUTOML_LLM_API_KEY`
 3. Fallback env var for API key: `NVIDIA_API_KEY`
-4. Defaults: NVIDIA inference endpoint (`https://inference-api.nvidia.com`) with `gcp/google/gemini-3.1-pro-preview`. Always pass the endpoint, model, and key explicitly for reproducible LLM-based testing.
+4. This skill has no default endpoint or model: the user supplies the base URL of an OpenAI-compatible endpoint they can reach and a model id it serves. Always pass the endpoint, model, and key explicitly, so that the run never depends on a fallback built into the runner.
 
 ### Programmatic API (without runner)
 
@@ -254,8 +254,8 @@ print("Best:", automl.get_best().specs)
 | `automl_max_concurrent` | int | 4 | Max parallel configs (asha only) |
 | `automl_population_size` | int | 10 | Population size (pbt only) |
 | `automl_max_experiments` | int | 50 | Max experiments (autoresearch only) |
-| `llm_endpoint` | str | `https://inference-api.nvidia.com` | OpenAI-compatible API endpoint (llm, hybrid, autoresearch) |
-| `llm_model` | str | `gcp/google/gemini-3.1-pro-preview` | LLM model name (llm, hybrid, autoresearch) |
+| `llm_endpoint` | str | **required by this skill**: always pass it (the runner package has its own built-in fallback, which most users cannot reach) | Base URL of the user's OpenAI-compatible API endpoint (llm, hybrid, autoresearch) |
+| `llm_model` | str | **required by this skill**: always pass it (the runner package falls back to a model id of its built-in endpoint) | LLM model name that endpoint serves (llm, hybrid, autoresearch) |
 | `llm_api_key` | str | from env | API key for the LLM endpoint |
 | `research_program` | str | None | Free-text research directives for the autoresearch agent |
 | `evolvable_text_parameters` | str \| list[str] | `[]` | Searchable text parameters that `autoresearch` may rewrite beyond schema seed enums. |

@@ -63,8 +63,8 @@ DINO_BUNDLE = {
         "dataset": {
             "train_data_sources": [
                 {
-                    "image_dir": "/lustre/fsw/portfolios/data/coco/train2017",
-                    "json_file": "/lustre/fsw/portfolios/data/coco/train.json",
+                    "image_dir": "/lustre/data/coco/train2017",
+                    "json_file": "/lustre/data/coco/train.json",
                 }
             ],
             "batch_size": 4,
@@ -75,7 +75,7 @@ DINO_BUNDLE = {
         {
             "spec_key": "dataset.train_data_sources[0].image_dir",  # dotted POINTER — allowed
             "type": "folder",
-            "uri": "lustre:///lustre/fsw/portfolios/data/coco/train2017",
+            "uri": "lustre:///lustre/data/coco/train2017",
         },
         {
             "spec_key": "train.pretrained_model_path",
@@ -115,6 +115,13 @@ def test_dino_config_bundle_valid(spec_schema):
 
 def test_args_bundle_valid(spec_schema):
     ok(ARGS_BUNDLE, spec_schema)
+
+
+def test_declared_output_accepts_safe_relative_path(spec_schema):
+    b = copy.deepcopy(ARGS_BUNDLE)
+    b["declared_outputs"] = [{"spec_key": "binary_coco", "type": "file",
+                              "relative_path": "pseudo_labels/coco.json"}]
+    ok(b, spec_schema)
 
 
 def test_bundle_accepts_model_owned_action_lifecycle(spec_schema):
@@ -259,6 +266,14 @@ def test_reject_empty_declared_outputs(spec_schema):
     bad(b, spec_schema)
 
 
+@pytest.mark.parametrize("path", ["/absolute/coco.json", "../coco.json", "labels/../coco.json"])
+def test_reject_unsafe_declared_output_relative_path(spec_schema, path):
+    b = copy.deepcopy(ARGS_BUNDLE)
+    b["declared_outputs"] = [{"spec_key": "binary_coco", "type": "file",
+                              "relative_path": path}]
+    bad(b, spec_schema)
+
+
 def test_reject_zero_nodes(spec_schema):
     b = copy.deepcopy(DINO_BUNDLE)
     b["compute_shape"]["nodes"] = 0
@@ -277,7 +292,7 @@ RECORD = {
     "image": "nvcr.io/nvidia/tao/tao-toolkit:6.26.3-pyt",  # unpinned: test fixture
     "network_arch": "dino",
     "action": "train",
-    "results_dir": "/lustre/fsw/portfolios/project/results/dino-train-a1b2c3",
+    "results_dir": "/lustre/project/results/dino-train-a1b2c3",
     "storage_tier": "A",
     "upload_excludes": ["inputs/"],
     "submitted_at": "2026-07-09T18:00:00+00:00",

@@ -782,7 +782,9 @@ def test_framework_v12_preflight_requires_finite_validation_stream() -> None:
     )
 
     startup = preflight["container_startup"]
-    assert "inspect_converter_runtime" in startup
+    assert "cosmos_framework.scripts" in startup
+    assert "convert_model_to_vlm_safetensors" in startup
+    assert "cosmos_rl.model_preparation" not in startup
     assert "TAO_PREFLIGHT_ASSERTION_FAILED:model_preparation_runtime" in startup
     assert "framework_finite_validation_stream" in startup
     assert "evalval-lab-v10/modules" in startup
@@ -894,7 +896,7 @@ def test_framework_validation_cache_preflight_attests_inherited_and_new_modules(
 
 
 def test_framework_validation_feature_cache_is_gated_on_supported_model_type() -> None:
-    """NVBUG 6669758: Cosmos Framework supports the cache only for qwen3_vl.
+    """Cosmos Framework supports the cache only for qwen3_vl.
 
     Enabling it for cosmos3_edge aborts at model construction, so the planner
     must not seal a nonzero size for unsupported families.
@@ -948,7 +950,7 @@ def test_framework_explicit_feature_cache_rejected_for_unsupported_model_type() 
 
     Silently zeroing a user's explicit size would hide the incompatibility;
     raising here replaces a post-distributed-init ChildFailedError with an
-    actionable planner error. NVBUG 6669758.
+    actionable planner error.
     """
     args = SimpleNamespace(
         dataset_family="video_conversation",

@@ -9,17 +9,32 @@ Recommended for publication based on the completed evaluation evidence in this r
 ## Evaluation Metadata
 
 - Skill: `tao-run-deft-aoi-cosmos3`
-- Evaluation date: 2026-09-22
-- Evaluator version: `1.5.6`
-- Agents: Claude Code (`aws/anthropic/bedrock-claude-opus-4-8`), Codex (`openai/openai/gpt-5.5`)
+- Validation status: `passed`
+- Evaluation date: 2026-11-24
+- Evaluator version: `1.6.10`
+- Agents: Claude Code (`aws/anthropic/bedrock-claude-opus-5-5`), Codex (`openai/openai/gpt-6.1-sol`)
 - Tasks: 3 evaluation tasks (3 positive)
 - Dataset digest: `sha256:4015aa6d9af5f535d47c8467a34ce351d0cdfc45b0fb0f7be5a6e99c30a1f90a` (skill-evaluator-dataset-snapshot/1)
-- Attempts per task: 3
+- Attempts per task: 1
 - Environment: `k8s-sandbox`
 - Tier 2 evidence: required for publication
 - Tier 3 evidence: required for publication
 
 Each task attempt ran in its own isolated sandbox pod.
+
+## Tier 1 LLM Provenance
+
+SkillSpector provider, model, analyzer revision, and determinism evidence retained for this scan.
+
+| Skill | Provider | Adapter | Analyzer | Model | Revision | Determinism |
+| --- | --- | --- | --- | --- | --- | --- |
+| tao-run-deft-aoi-cosmos3 | nv_inference | openai | mcp_tool_poisoning | `aws/anthropic/bedrock-claude-opus-5-5` | `2.13.5` | nondeterministic / provider_defaults |
+| tao-run-deft-aoi-cosmos3 | nv_inference | openai | semantic_developer_intent | `aws/anthropic/bedrock-claude-opus-5-5` | `2.13.5` | nondeterministic / provider_defaults |
+| tao-run-deft-aoi-cosmos3 | nv_inference | openai | semantic_quality_policy | `aws/anthropic/bedrock-claude-opus-5-5` | `2.13.5` | nondeterministic / provider_defaults |
+| tao-run-deft-aoi-cosmos3 | nv_inference | openai | semantic_security_discovery | `aws/anthropic/bedrock-claude-opus-5-5` | `2.13.5` | nondeterministic / provider_defaults |
+| tao-run-deft-aoi-cosmos3 | nv_inference | openai | meta_analyzer | `aws/anthropic/bedrock-claude-opus-5-5` | `2.13.5` | nondeterministic / provider_defaults |
+
+- Controls for `tao-run-deft-aoi-cosmos3`: temperature=not set (source=provider_default, forwarded=no); seed=not set (source=unset, forwarded=no); reasoning_effort=not set (source=provider_default, forwarded=no)
 
 ## What This Report Answers
 
@@ -35,16 +50,27 @@ The three-tier evaluation checks whether the skill:
 
 | Measure | Claude Code (Baseline → Skill Uplift) | Codex (Baseline → Skill Uplift) |
 |---|---:|---:|
-| Overall | 88.9% — baseline ran, but no comparable score was available; uplift unavailable | 89.5% — baseline ran, but no comparable score was available; uplift unavailable |
-| Security | 88.9% → 100.0% (+11.1 points) | 77.8% → 100.0% (+22.2 points) |
-| Correctness | 13.3% → 86.7% (+73.4 points) | 26.7% → 80.0% (+53.3 points) |
-| Discoverability | 98.3% — baseline ran, but no comparable score was available; uplift unavailable | 91.7% — baseline ran, but no comparable score was available; uplift unavailable |
-| Effectiveness | 9.7% → 70.8% (+61.1 points) | 19.5% → 79.2% (+59.7 points) |
-| Efficiency | 88.9% — baseline ran, but no comparable score was available; uplift unavailable | 96.9% — baseline ran, but no comparable score was available; uplift unavailable |
+| Overall | 88.7% — baseline ran, but no comparable score was available; uplift unavailable | 87.5% — baseline ran, but no comparable score was available; uplift unavailable |
+| Security | 100.0% → 100.0% (±0.0 points) | 100.0% → 100.0% (±0.0 points) |
+| Correctness | 26.7% → 100.0% (+73.3 points) | 40.0% → 93.3% (+53.3 points) |
+| Discoverability | 96.7% — baseline ran, but no comparable score was available; uplift unavailable | 95.0% — baseline ran, but no comparable score was available; uplift unavailable |
+| Effectiveness | 10.8% → 53.3% (+42.5 points) | 10.8% → 54.2% (+43.4 points) |
+| Efficiency | 93.4% — baseline ran, but no comparable score was available; uplift unavailable | 95.2% — baseline ran, but no comparable score was available; uplift unavailable |
 
 **How to read this table:** baseline is the same task attempted without the target skill. Scores are rounded to one decimal; threshold-adjacent values use additional precision so their displayed band matches the verdict. Uplift is derived from those displayed scores and shown in percentage points.
 
 Example: `47.0% → 92.0% (+45.0 points)` means the skill-assisted run scored 92.0%, 45.0 percentage points above its 47.0% no-skill baseline.
+
+### Comparison details
+
+Shared-source comparisons use the same signals and weights on both conditions. They do not replace the full dimension scores above or change the publication verdict.
+
+| Agent | Dimension | Basis | Baseline → With skill (uplift) | Explanation |
+| --- | --- | --- | --- | --- |
+| claude-code | Discoverability | Dimension comparison | N/A | Discoverability is not applicable to the no-skill baseline; there is no installed skill to discover. |
+| claude-code | Efficiency | Token-only comparison | 98.3% → 92.4% (-5.9 points) | Only Token Efficiency is comparable; the full dimension scores use different evaluator sources. |
+| codex | Discoverability | Dimension comparison | N/A | Discoverability is not applicable to the no-skill baseline; there is no installed skill to discover. |
+| codex | Efficiency | Token-only comparison | 88.8% → 90.3% (+1.5 points) | Only Token Efficiency is comparable; the full dimension scores use different evaluator sources. |
 
 ## Token Usage
 
@@ -52,24 +78,24 @@ Actual Tier 3 execution usage is reported for every observed agent/case pair and
 
 | Agent | Dataset case | With skill | Without skill | Delta | Change | Coverage |
 |---|---|---:|---:|---:|---:|---|
-| claude-code | All cases | 910,352 | 2,397,966 | N/A | N/A | skill 3/3; base 9/9 |
-| claude-code | tao-run-deft-aoi-cosmos3-bare-isolation | 434,641 | 769,045 | N/A | N/A | skill 1/1; base 3/3 |
-| claude-code | tao-run-deft-aoi-cosmos3-basic | 234,718 | 641,298 | N/A | N/A | skill 1/1; base 3/3 |
-| claude-code | tao-run-deft-aoi-cosmos3-resume-state | 240,993 | 987,623 | N/A | N/A | skill 1/1; base 3/3 |
-| codex | All cases | 266,123 | 795,840 | N/A | N/A | skill 3/3; base 9/9 |
-| codex | tao-run-deft-aoi-cosmos3-bare-isolation | 122,695 | 434,068 | N/A | N/A | skill 1/1; base 3/3 |
-| codex | tao-run-deft-aoi-cosmos3-basic | 49,685 | 66,737 | N/A | N/A | skill 1/1; base 3/3 |
-| codex | tao-run-deft-aoi-cosmos3-resume-state | 93,743 | 295,035 | N/A | N/A | skill 1/1; base 3/3 |
-| ALL AGENTS | Dataset aggregate | 1,176,475 | 3,193,806 | N/A | N/A | skill 6/6; base 18/18 |
+| claude-code | All cases | 610,044 | 504,753 | +105,291 | +20.86% | skill 3/3; base 3/3 |
+| claude-code | tao-run-deft-aoi-cosmos3-bare-isolation | 263,539 | 179,409 | +84,130 | +46.89% | skill 1/1; base 1/1 |
+| claude-code | tao-run-deft-aoi-cosmos3-basic | 180,295 | 110,020 | +70,275 | +63.87% | skill 1/1; base 1/1 |
+| claude-code | tao-run-deft-aoi-cosmos3-resume-state | 166,210 | 215,324 | -49,114 | -22.81% | skill 1/1; base 1/1 |
+| codex | All cases | 226,169 | 188,542 | +37,627 | +19.96% | skill 3/3; base 3/3 |
+| codex | tao-run-deft-aoi-cosmos3-bare-isolation | 84,534 | 86,432 | -1,898 | -2.20% | skill 1/1; base 1/1 |
+| codex | tao-run-deft-aoi-cosmos3-basic | 71,109 | 61,308 | +9,801 | +15.99% | skill 1/1; base 1/1 |
+| codex | tao-run-deft-aoi-cosmos3-resume-state | 70,526 | 40,802 | +29,724 | +72.85% | skill 1/1; base 1/1 |
+| ALL AGENTS | Dataset aggregate | 836,213 | 693,295 | +142,918 | +20.61% | skill 6/6; base 6/6 |
 
-Prompt tokens include cached reads, so total tokens are `prompt + completion` (cached is not added twice). The Efficiency score uses `(prompt - cached) + completion`. N/A means the relevant trajectory counters were not available; coverage is never estimated.
+Prompt tokens include cached reads, so total tokens are `prompt + completion` (cached is not added twice). The Efficiency score uses `(prompt - cached) + completion`. Change is `100 * (with - without) / without`; negative means fewer tokens. N/A comparisons include their reason in the coverage column; coverage is never estimated.
 
 ## Tier Status
 
 | Tier | Purpose | Status | Evidence |
 |---|---|---|---|
-| Tier 1 | Static validation | **PASSED WITH OBSERVATIONS** | 11 validator(s); 76 finding(s) |
-| Tier 2 | Semantic deduplication | **PASSED** | 2 validator(s); 0 finding(s) |
+| Tier 1 | Static validation | **PASSED WITH OBSERVATIONS** | 11 validator(s); 86 finding(s) |
+| Tier 2 | Semantic deduplication | **PASSED WITH OBSERVATIONS** | 2 validator(s); 3 finding(s) |
 | Tier 3 | Live agent evaluation | **PASS** | 2 agent(s); 3 task(s) |
 
 ## Findings and Observations
@@ -77,12 +103,24 @@ Prompt tokens include cached reads, so total tokens are `prompt + completion` (c
 <details>
 <summary>Show detailed findings and successful checks</summary>
 
+- **HIGH** DUPLICATE/duplicate: Duplicate content found across references/air-gap.md and references/preflight.md:
+  "# Air-Gapped Cosmos3 DEFT AOI" in references/air-gap.md (lines 20-22)
+  vs "## 5. Resolve current images" in references/preflight.md (lines 170-174) (`references/air-gap.md:20`)
+- **HIGH** DUPLICATE/duplicate: Duplicate content found across references/aoi-annotation.md and references/preflight.md:
+  "## Validate" in references/aoi-annotation.md (lines 100-132)
+  vs "## 4. Validate split isolation" in references/preflight.md (lines 91-120) (`references/aoi-annotation.md:100`)
+- **HIGH** DUPLICATE/duplicate: Duplicate content found across SKILL.md and references/air-gap.md and references/cosmos-reason.md and references/data-layout.md and references/pipeline-and-state.md and references/preflight.md:
+  "## Cosmos3 Model Contract" in SKILL.md (lines 80-136)
+  vs "# Air-Gapped Cosmos3 DEFT AOI" in references/air-gap.md (lines 8-19)
+  vs "## Prepare the Cosmos Reason 3 checkpoint" in references/cosmos-reason.md (lines 3-18)
+  vs "# Pre-Flight resolves this packaged Nano mapping to an immutable Hub revision." in references/cosmos-reason.md (lines 40-93)
+  vs "## Workspace" in references/data-layout.md (lines 36-44)
+  vs "## Iteration" in references/pipeline-and-state.md (lines 100-109)
+  vs "## 6. Model and evaluator contract" in references/preflight.md (lines 210-257)
+  vs "## 7. Plan checkpoint preparation" in references/preflight.md (lines 258-303) (`SKILL.md:80`)
 - **MEDIUM** QUALITY/quality_correctness: No documented scripts in table format (`skills/applications/tao-run-deft-aoi-cosmos3/SKILL.md`)
 - **MEDIUM** QUALITY/quality_correctness: Instructions don't mention 'run_script' (`skills/applications/tao-run-deft-aoi-cosmos3/SKILL.md`)
-- **MEDIUM** QUALITY/quality_correctness: SKILL_SPEC recommended field missing: 'metadata.tags' (`skills/applications/tao-run-deft-aoi-cosmos3/SKILL.md`)
-- **MEDIUM** SCHEMA/frontmatter_field_placement: Root field 'tags' is ignored; use 'metadata.tags' (`skills/applications/tao-run-deft-aoi-cosmos3/SKILL.md`)
-- **MEDIUM** SCHEMA/folder_hierarchy: Unexpected nesting depth for general skill (`skills/applications/tao-run-deft-aoi-cosmos3`)
-- 71 additional finding(s) are available in the full evaluation artifacts.
+- 84 additional finding(s) are available in the full evaluation artifacts.
 
 </details>
 
