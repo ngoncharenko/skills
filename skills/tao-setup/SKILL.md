@@ -2,7 +2,7 @@
 name: tao-setup
 description: One-time session setup and orchestration map for the TAO skill bank. Run this first when the TAO skills were installed individually (e.g. from a public skills catalog) so the session gets the cross-skill discovery flow, credential checks, and host preflight that the bundled plugin hook would otherwise inject automatically. Trigger phrases include "set up TAO skills", "TAO session setup", "prepare TAO environment", "TAO getting started".
 license: Apache-2.0
-compatibility: Requires bash and Python 3.10+. Docker plus the NVIDIA container toolkit are needed by most downstream TAO skills but are only checked (not installed) here.
+compatibility: Requires bash and Python 3.10+ with PyYAML (the shared helper scripts import it). Docker plus the NVIDIA container toolkit are needed by most downstream TAO skills but are only checked (not installed) here.
 metadata:
   author: NVIDIA Corporation
   version: "0.1.0"
@@ -29,10 +29,25 @@ run this skill first.
 
 ## Quick Start
 
+Individual skill installs do not include the shared `scripts/` helpers. Obtain
+a complete TAO skill bank checkout at the same release ref as the installed
+skills, then verify it before using any shared helper. If the checkout is
+elsewhere, set `TAO_SKILL_BANK_PATH` to its root. Reuse a plugin-provided path
+when present. If no checkout exists, obtain it with user approval, for example
+`git clone --branch <installed-release-ref> --single-branch https://github.com/NVIDIA-TAO/tao-skill-bank.git <bank-dir>`.
+Point `TAO_SKILL_BANK_PATH` at that checkout and stop if the helper check fails.
+
 ```bash
+export TAO_SKILL_BANK_PATH="${TAO_SKILL_BANK_PATH:-$HOME/tao-skill-bank}"
+for item in versions.yaml scripts/resolve_tao_model.py scripts/resolve_tao_image.py scripts/check_tao_launch_preflight.py scripts/redact_secrets.py scripts/tao_job_record.py skills/models skills/platform; do
+  [ -e "$TAO_SKILL_BANK_PATH/$item" ] || { echo "Incomplete TAO skill bank: missing $item under $TAO_SKILL_BANK_PATH" >&2; exit 1; }
+done
+
 set -a; source /path/to/.env; set +a   # omit if already exported
 
-# 1. Host preflight — most TAO skills dispatch docker containers on a GPU host.
+# 1. Host preflight — the shared helper scripts need PyYAML for python3, and
+#    most TAO skills dispatch docker containers on a GPU host.
+python3 -c 'import yaml' 2>/dev/null && echo "OK: PyYAML" || echo "MISSING: PyYAML (python3 cannot import yaml; the shared helper scripts need it). Install it with: python3 -m pip install pyyaml"
 docker info > /dev/null && echo "OK: docker" || echo "MISSING: docker"
 nvidia-smi > /dev/null && echo "OK: GPU" || echo "MISSING: NVIDIA GPU/driver"
 
@@ -44,7 +59,17 @@ done
 # 3. NGC registry login (needed for nvcr.io image pulls). Key goes over
 #    stdin — never as an argv flag, where it lands in the process table.
 [ -n "${NGC_KEY:-}" ] && printf '%s' "$NGC_KEY" | docker login nvcr.io -u '$oauthtoken' --password-stdin
+
+# 4. Token-efficient execution kit (recommended): preflight + scaffold
+#    ~/.tao-kit/kit.env. Non-invasive; see skills/core/tao-token-efficient-execution.
+bash "${TAO_SKILL_BANK_PATH}/skills/core/tao-token-efficient-execution/scripts/install.sh"
 ```
+
+If the check prints `MISSING: PyYAML`, the machine is not ready: the listing,
+resolver, and launch-preflight helpers under `scripts/` cannot start without
+it. Install PyYAML into the Python that `python3` runs (in a virtual
+environment when the system Python refuses the install), rerun the check, and
+do not report setup as complete before it prints `OK: PyYAML`.
 
 If Docker or the NVIDIA host runtime is missing, use the
 `tao-setup-nvidia-gpu-host` skill — it checks and (with approval) installs
@@ -66,6 +91,22 @@ creates a credentials file for you; the one credential write here is step 3's
 - `WANDB_API_KEY` — experiment tracking (optional)
 - `ACCESS_KEY` / `SECRET_KEY` / `S3_BUCKET_NAME` / `S3_ENDPOINT_URL` — S3 I/O
 - `BREV_API_TOKEN` — Brev platform dispatch
+
+## Token-efficient execution (recommended for repeated workflows)
+
+Step 4 of the Quick Start installs the execution kit
+(`skills/core/tao-token-efficient-execution`): compiled **card packs** run
+application workflows as fresh per-stage sessions instead of one long
+conversation (measured 74-91% cheaper, 4-5x lower peak context, and the only
+mode validated on small execution models). Setup only scaffolds the config;
+the routing rule applies at launch time: **when a card pack exists for the
+requested workflow (`skills/applications/<skill>/cards/`), the `pi` harness
+is installed, and the user asked for the card-pack route, use its `driver.sh`
+instead of in-conversation stage execution; otherwise run the stages in the
+conversation.** The `tao-launch-workflow` gate still applies in full — the
+driver launch is the side-effecting action it reviews. Packs ship today for
+`tao-run-deft-aoi` and `tao-run-automl`; the kit's authoring prompt compiles
+packs for other workflows.
 
 ## Discovery flow (how TAO skills chain)
 
@@ -125,12 +166,11 @@ creates a credentials file for you; the one credential write here is step 3's
   (`tao-run-automl`), which uses the `nvidia-tao-automl` wheel and its
   transitive SDK.
 
-## Optional: Codex agent identity
+## Optional: agent identity for Codex and Cursor
 
-For Codex sessions, `scripts/install-codex-agents.sh` registers the TAO skill
-marketplace, installs the plugin, and copies the TAO agent identity to
-`~/.codex/AGENTS.md` so it loads in every session:
+With user approval, add the TAO identity to the project's `AGENTS.md` as a
+marked block (`add` again updates it, `remove` deletes it). In the project:
 
 ```bash
-bash scripts/install-codex-agents.sh
+python3 "${TAO_SKILL_BANK_PATH:?}/scripts/tao_agent_identity.py" add
 ```

@@ -3,8 +3,8 @@
 The threshold sweep, weakness ranking, and per-lighting expansion all run inside the pinned TAO data-services image below. Confirm Docker, the NVIDIA container toolkit, and a GPU are present and ensure the image is cached:
 
 ```bash
-# Pinned TAO data-services container URI (stamped from the release manifest)
-DS_IMAGE=nvcr.io/nvidia/tao/tao-toolkit:7.2.0-data-services  # versions-key: images.tao_toolkit.data_services
+# Resolve the pinned TAO data-services container URI from the release manifest.
+DS_IMAGE="$(scripts/resolve_versions_key.py images.tao_toolkit.data_services)"
 echo "DS_IMAGE=$DS_IMAGE"
 
 docker info > /dev/null && echo "OK: docker"
@@ -30,4 +30,4 @@ docker run --rm -v "$WORKSPACE:/w" alpine chown -R $(id -u):$(id -g) /w/<results
 
 If `inference.csv`, the train YAML, and the dataset images live in different roots, pass multiple `-v` flags — but every absolute path you pass in args must resolve inside the container.
 
-**`-e <spec>` is required, not optional.** Older revisions of this doc described `-e <spec>` as a convenience and Hydra CLI overrides as sufficient on their own. In current `tao_toolkit.data_services` images (verified on `7.0.0-rc-180-multiarch` and later) the entrypoint hard-requires the flag and exits with `ValueError: The subtask vcn_aoi requires the following argument: -e/--experiment_spec_file` before parsing any CLI override. Always pass a minimal spec file — even a thin YAML containing just `min_recall` / `top_k_per_label` / `threshold` is enough; the CLI overrides win at merge time. The `## Reference invocation` block writes this file once per run.
+**`-e <spec>` is required, not optional.** Older revisions of this doc described `-e <spec>` as a convenience and Hydra CLI overrides as sufficient on their own. In current `tao_toolkit.data_services` images (verified on `7.0.0` and later) the entrypoint hard-requires the flag and exits with `ValueError: The subtask vcn_aoi requires the following argument: -e/--experiment_spec_file` before parsing any CLI override. Always pass a minimal spec file — even a thin YAML containing just `min_recall` / `top_k_per_label` / `threshold` is enough; the CLI overrides win at merge time. The `## Reference invocation` block writes this file once per run.

@@ -9,17 +9,32 @@ Recommended for publication based on the completed evaluation evidence in this r
 ## Evaluation Metadata
 
 - Skill: `tao-run-deft-object-detection`
-- Evaluation date: 2026-09-17
-- Evaluator version: `1.5.6`
-- Agents: Claude Code (`aws/anthropic/bedrock-claude-opus-4-8`), Codex (`openai/openai/gpt-5.5`)
+- Validation status: `passed`
+- Evaluation date: 2026-11-24
+- Evaluator version: `1.6.10`
+- Agents: Claude Code (`aws/anthropic/bedrock-claude-opus-5-5`), Codex (`openai/openai/gpt-6.1-sol`)
 - Tasks: 4 evaluation tasks (4 positive)
 - Dataset digest: `sha256:d3fce2a83efb9ec178ecc5fc8a20f8c2280adffa3b279916a073015372c25237` (skill-evaluator-dataset-snapshot/1)
-- Attempts per task: 3
+- Attempts per task: 1
 - Environment: `k8s-sandbox`
 - Tier 2 evidence: required for publication
 - Tier 3 evidence: required for publication
 
 Each task attempt ran in its own isolated sandbox pod.
+
+## Tier 1 LLM Provenance
+
+SkillSpector provider, model, analyzer revision, and determinism evidence retained for this scan.
+
+| Skill | Provider | Adapter | Analyzer | Model | Revision | Determinism |
+| --- | --- | --- | --- | --- | --- | --- |
+| tao-run-deft-object-detection | nv_inference | openai | mcp_tool_poisoning | `aws/anthropic/bedrock-claude-opus-5-5` | `2.13.5` | nondeterministic / provider_defaults |
+| tao-run-deft-object-detection | nv_inference | openai | semantic_developer_intent | `aws/anthropic/bedrock-claude-opus-5-5` | `2.13.5` | nondeterministic / provider_defaults |
+| tao-run-deft-object-detection | nv_inference | openai | semantic_quality_policy | `aws/anthropic/bedrock-claude-opus-5-5` | `2.13.5` | nondeterministic / provider_defaults |
+| tao-run-deft-object-detection | nv_inference | openai | semantic_security_discovery | `aws/anthropic/bedrock-claude-opus-5-5` | `2.13.5` | nondeterministic / provider_defaults |
+| tao-run-deft-object-detection | nv_inference | openai | meta_analyzer | `aws/anthropic/bedrock-claude-opus-5-5` | `2.13.5` | nondeterministic / provider_defaults |
+
+- Controls for `tao-run-deft-object-detection`: temperature=not set (source=provider_default, forwarded=no); seed=not set (source=unset, forwarded=no); reasoning_effort=not set (source=provider_default, forwarded=no)
 
 ## What This Report Answers
 
@@ -35,12 +50,12 @@ The three-tier evaluation checks whether the skill:
 
 | Measure | Claude Code (Baseline → Skill Uplift) | Codex (Baseline → Skill Uplift) |
 |---|---:|---:|
-| Overall | 91.7% — baseline ran, but no comparable score was available; uplift unavailable | 83.4% — baseline ran, but no comparable score was available; uplift unavailable |
-| Security | 83.3% → 100.0% (+16.7 points) | 100.0% → 100.0% (±0.0 points) |
-| Correctness | 5.0% → 95.0% (+90.0 points) | 24.0% → 100.0% (+76.0 points) |
-| Discoverability | 95.0% — baseline ran, but no comparable score was available; uplift unavailable | 42.5% — baseline ran, but no comparable score was available; uplift unavailable |
-| Effectiveness | 10.4% → 86.0% (+75.6 points) | 17.3% → 80.5% (+63.2 points) |
-| Efficiency | 82.6% — baseline ran, but no comparable score was available; uplift unavailable | 94.2% — baseline ran, but no comparable score was available; uplift unavailable |
+| Overall | 83.4% — baseline ran, but no comparable score was available; uplift unavailable | 63.6% — baseline ran, but no comparable score was available; uplift unavailable |
+| Security | 100.0% → 100.0% (±0.0 points) | 75.0% → 100.0% (+25.0 points) |
+| Correctness | 15.0% → 90.0% (+75.0 points) | 20.0% → 70.0% (+50.0 points) |
+| Discoverability | 75.0% — baseline ran, but no comparable score was available; uplift unavailable | 23.8% — baseline ran, but no comparable score was available; uplift unavailable |
+| Effectiveness | 14.4% → 62.5% (+48.1 points) | 16.2% → 27.8% (+11.6 points) |
+| Efficiency | 89.7% — baseline ran, but no comparable score was available; uplift unavailable | 96.5% — baseline ran, but no comparable score was available; uplift unavailable |
 
 **How to read this table:** baseline is the same task attempted without the target skill. Scores are rounded to one decimal; threshold-adjacent values use additional precision so their displayed band matches the verdict. Uplift is derived from those displayed scores and shown in percentage points.
 
@@ -48,32 +63,43 @@ Example: `47.0% → 92.0% (+45.0 points)` means the skill-assisted run scored 92
 
 A partial dimension was calculated from only the available configured signals; review the detailed report before relying on it.
 
+### Comparison details
+
+Shared-source comparisons use the same signals and weights on both conditions. They do not replace the full dimension scores above or change the publication verdict.
+
+| Agent | Dimension | Basis | Baseline → With skill (uplift) | Explanation |
+| --- | --- | --- | --- | --- |
+| claude-code | Discoverability | Dimension comparison | N/A | Discoverability is not applicable to the no-skill baseline; there is no installed skill to discover. |
+| claude-code | Efficiency | Token-only comparison | 98.6% → 96.0% (-2.6 points) | Only Token Efficiency is comparable; the full dimension scores use different evaluator sources. |
+| codex | Discoverability | Dimension comparison | N/A | Discoverability is not applicable to the no-skill baseline; there is no installed skill to discover. |
+| codex | Efficiency | Token-only comparison | 93.2% → 93.1% (-0.1 points) | Only Token Efficiency is comparable; the full dimension scores use different evaluator sources. |
+
 ## Token Usage
 
 Actual Tier 3 execution usage is reported for every observed agent/case pair and both conditions.
 
 | Agent | Dataset case | With skill | Without skill | Delta | Change | Coverage |
 |---|---|---:|---:|---:|---:|---|
-| claude-code | All cases | 562,944 | 2,793,793 | N/A | N/A | skill 4/4; base 12/12 |
-| claude-code | tao-run-deft-object-detection-basic | 107,777 | 531,281 | N/A | N/A | skill 1/1; base 3/3 |
-| claude-code | tao-run-deft-object-detection-resume-state | 285,769 | 716,791 | N/A | N/A | skill 1/1; base 3/3 |
-| claude-code | tao-run-deft-object-detection-run-loop | 69,514 | 95,207 | N/A | N/A | skill 1/1; base 3/3 |
-| claude-code | tao-run-deft-object-detection-stage-skills | 99,884 | 1,450,514 | N/A | N/A | skill 1/1; base 3/3 |
-| codex | All cases | 365,449 | 417,290 | N/A | N/A | skill 4/4; base 10/10 |
-| codex | tao-run-deft-object-detection-basic | 13,944 | 13,786 | +158 | +1.15% | skill 1/1; base 1/1 |
-| codex | tao-run-deft-object-detection-resume-state | 305,336 | 320,957 | N/A | N/A | skill 1/1; base 3/3 |
-| codex | tao-run-deft-object-detection-run-loop | 14,410 | 41,751 | N/A | N/A | skill 1/1; base 3/3 |
-| codex | tao-run-deft-object-detection-stage-skills | 31,759 | 40,796 | N/A | N/A | skill 1/1; base 3/3 |
-| ALL AGENTS | Dataset aggregate | 928,393 | 3,211,083 | N/A | N/A | skill 8/8; base 22/22 |
+| claude-code | All cases | 394,191 | 464,629 | -70,438 | -15.16% | skill 4/4; base 4/4 |
+| claude-code | tao-run-deft-object-detection-basic | 77,846 | 35,655 | +42,191 | +118.33% | skill 1/1; base 1/1 |
+| claude-code | tao-run-deft-object-detection-resume-state | 158,695 | 181,174 | -22,479 | -12.41% | skill 1/1; base 1/1 |
+| claude-code | tao-run-deft-object-detection-run-loop | 36,876 | 35,849 | +1,027 | +2.86% | skill 1/1; base 1/1 |
+| claude-code | tao-run-deft-object-detection-stage-skills | 120,774 | 211,951 | -91,177 | -43.02% | skill 1/1; base 1/1 |
+| codex | All cases | 139,370 | 100,935 | +38,435 | +38.08% | skill 4/4; base 4/4 |
+| codex | tao-run-deft-object-detection-basic | 13,724 | 13,337 | +387 | +2.90% | skill 1/1; base 1/1 |
+| codex | tao-run-deft-object-detection-resume-state | 98,138 | 60,656 | +37,482 | +61.79% | skill 1/1; base 1/1 |
+| codex | tao-run-deft-object-detection-run-loop | 13,932 | 13,640 | +292 | +2.14% | skill 1/1; base 1/1 |
+| codex | tao-run-deft-object-detection-stage-skills | 13,576 | 13,302 | +274 | +2.06% | skill 1/1; base 1/1 |
+| ALL AGENTS | Dataset aggregate | 533,561 | 565,564 | -32,003 | -5.66% | skill 8/8; base 8/8 |
 
-Prompt tokens include cached reads, so total tokens are `prompt + completion` (cached is not added twice). The Efficiency score uses `(prompt - cached) + completion`. N/A means the relevant trajectory counters were not available; coverage is never estimated.
+Prompt tokens include cached reads, so total tokens are `prompt + completion` (cached is not added twice). The Efficiency score uses `(prompt - cached) + completion`. Change is `100 * (with - without) / without`; negative means fewer tokens. N/A comparisons include their reason in the coverage column; coverage is never estimated.
 
 ## Tier Status
 
 | Tier | Purpose | Status | Evidence |
 |---|---|---|---|
-| Tier 1 | Static validation | **PASSED WITH OBSERVATIONS** | 11 validator(s); 117 finding(s) |
-| Tier 2 | Semantic deduplication | **PASSED WITH OBSERVATIONS** | 2 validator(s); 1 finding(s) |
+| Tier 1 | Static validation | **PASSED WITH OBSERVATIONS** | 11 validator(s); 97 finding(s) |
+| Tier 2 | Semantic deduplication | **PASSED WITH OBSERVATIONS** | 2 validator(s); 5 finding(s) |
 | Tier 3 | Live agent evaluation | **PASS** | 2 agent(s); 4 task(s) |
 
 ## Findings and Observations
@@ -82,13 +108,23 @@ Prompt tokens include cached reads, so total tokens are `prompt + completion` (c
 <summary>Show detailed findings and successful checks</summary>
 
 - **HIGH** DUPLICATE/duplicate: Duplicate content found across SKILL.md and references/scripts-and-agents.md:
-  "## Stage Reference Modules" in SKILL.md (lines 111-130)
-  vs "## Stage Reference Modules" in references/scripts-and-agents.md (lines 106-119) (`SKILL.md:111`)
-- **MEDIUM** QUALITY/quality_correctness: No documented scripts in table format (`skills/applications/tao-run-deft-object-detection/SKILL.md`)
-- **MEDIUM** QUALITY/quality_correctness: Instructions don't mention 'run_script' (`skills/applications/tao-run-deft-object-detection/SKILL.md`)
-- **MEDIUM** QUALITY/quality_correctness: SKILL_SPEC recommended field missing: 'metadata.tags' (`skills/applications/tao-run-deft-object-detection/SKILL.md`)
-- **MEDIUM** QUALITY/quality_discoverability: Description uses first/second person (`skills/applications/tao-run-deft-object-detection/SKILL.md`)
-- 113 additional finding(s) are available in the full evaluation artifacts.
+  "## Stage Reference Modules" in SKILL.md (lines 117-138)
+  vs "## Stage Reference Modules" in references/scripts-and-agents.md (lines 133-146) (`SKILL.md:117`)
+- **HIGH** DUPLICATE/duplicate: Duplicate content found across references/tao-analyze-detection-kpi.md and scripts/summarize_kpi.py:
+  "#   docker rm "deft_${PHASE}_kpi"" in references/tao-analyze-detection-kpi.md (lines 157-182)
+  vs "## Outputs" in references/tao-analyze-detection-kpi.md (lines 183-202)
+  vs "(module docstring)" in scripts/summarize_kpi.py (lines 1-34) (`references/tao-analyze-detection-kpi.md:157`)
+- **HIGH** DUPLICATE/duplicate: Duplicate content found within references/pipeline-and-state.md:
+  "## Pipeline" in references/pipeline-and-state.md (lines 23-26)
+  vs "## Stage Execution" in references/pipeline-and-state.md (lines 160-170) (`references/pipeline-and-state.md:23`)
+- **HIGH** DUPLICATE/duplicate: Duplicate content found across references/grounding-dino.md and references/pipeline-and-state.md:
+  "## Iteration train" in references/grounding-dino.md (lines 205-252)
+  vs "### Iteration N — seven stages, in order" in references/pipeline-and-state.md (lines 81-92) (`references/grounding-dino.md:205`)
+- **MEDIUM** DUPLICATE/duplicate: Duplicate content found across references/pipeline-and-state.md and references/tao-analyze-detection-kpi.md and references/tao-analyze-gaps-od-map.md:
+  "### Iteration N — seven stages, in order" in references/pipeline-and-state.md (lines 45-45)
+  vs "## When to invoke" in references/tao-analyze-detection-kpi.md (lines 5-11)
+  vs "## When to invoke" in references/tao-analyze-gaps-od-map.md (lines 5-8) (`references/pipeline-and-state.md:45`)
+- 97 additional finding(s) are available in the full evaluation artifacts.
 
 </details>
 

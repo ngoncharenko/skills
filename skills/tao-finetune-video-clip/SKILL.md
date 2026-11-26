@@ -41,7 +41,7 @@ Container images and per-action commands are in `references/skill_info.yaml` and
 
 > **Release note:** The pinned PyTorch image is the TAO 7.2 release-candidate build validated for Video-CLIP. It includes PyAV 17.1.0 as the primary decoder and ONNXScript 0.7.1 for export, with decord absent. The TAO Deploy image is pinned independently because `gen_trt_engine` and TensorRT-backed actions do not run in the PyTorch image.
 >
-> **Known-broken images:** interim builds cut before tao-pytorch commit `0cc31de4` ship a `video_clip` package with no `model.backbones` submodule, so `train`/`evaluate`/`inference` die at import while `video_clip --help` still exits 0. Images without PyAV also fail at data loading. Run both import checks in the preflight below before pulling data or launching a run.
+> **Known-broken images:** some older image builds ship a `video_clip` package with no `model.backbones` submodule, so `train`/`evaluate`/`inference` die at import while `video_clip --help` still exits 0. Images without PyAV also fail at data loading. Run both import checks in the preflight below before pulling data or launching a run.
 
 ## Train Action Policy
 
@@ -52,7 +52,7 @@ AutoML is not packaged for this model skill. Always use direct `video_clip` acti
 Use the pinned TAO container declared in `references/skill_info.yaml`. Pull with `NGC_KEY` when the image is not cached locally.
 
 ```bash
-VIDEO_CLIP_IMAGE_DEFAULT="nvcr.io/nvidia/tao/tao-toolkit:7.2.0-pyt"  # versions-key: images.tao_toolkit.pyt
+VIDEO_CLIP_IMAGE_DEFAULT="nvcr.io/nvidia/tao/tao-toolkit:7.3.0-pyt"  # versions-key: images.tao_toolkit.pyt
 VIDEO_CLIP_IMAGE="${VIDEO_CLIP_IMAGE:-$VIDEO_CLIP_IMAGE_DEFAULT}"
 docker pull "$VIDEO_CLIP_IMAGE"
 ```
@@ -81,10 +81,10 @@ workspace/
 └── results/
 ```
 
-Docker options for all actions (skill-eval CI uses the same `$WORKSPACE_DIR` bind-mount pattern):
+Docker options for all actions (eval runs use the same `$WORKSPACE_DIR` bind-mount pattern):
 
 ```bash
-VIDEO_CLIP_IMAGE_DEFAULT="nvcr.io/nvidia/tao/tao-toolkit:7.2.0-pyt"  # versions-key: images.tao_toolkit.pyt
+VIDEO_CLIP_IMAGE_DEFAULT="nvcr.io/nvidia/tao/tao-toolkit:7.3.0-pyt"  # versions-key: images.tao_toolkit.pyt
 VIDEO_CLIP_IMAGE="${VIDEO_CLIP_IMAGE:-$VIDEO_CLIP_IMAGE_DEFAULT}"
 RUN_ROOT="${RUN_ROOT:-$PWD}"
 DOCKER_COMMON=(
@@ -153,7 +153,7 @@ docker run "${DOCKER_COMMON[@]}" "$VIDEO_CLIP_IMAGE" \
 Use the independently pinned TAO Deploy image after PyTorch export. Read `references/tao-deploy-video-clip.md` before running the deploy actions; its templates cover the engine build, retrieval evaluation, and embedding inference contracts.
 
 ```bash
-VIDEO_CLIP_DEPLOY_IMAGE_DEFAULT="nvcr.io/nvidia/tao/tao-toolkit:7.2.0-deploy"  # versions-key: images.tao_toolkit.deploy
+VIDEO_CLIP_DEPLOY_IMAGE_DEFAULT="nvcr.io/nvidia/tao/tao-toolkit:7.3.0-deploy"  # versions-key: images.tao_toolkit.deploy
 VIDEO_CLIP_DEPLOY_IMAGE="${VIDEO_CLIP_DEPLOY_IMAGE:-$VIDEO_CLIP_DEPLOY_IMAGE_DEFAULT}"
 
 # Verify the independently pinned image before staging artifacts or using a GPU.
@@ -261,7 +261,7 @@ For vision-LoRA runs, start from `tao-pytorch` `experiment_spec_lora.yaml` or ad
 - **Deploy sidecars are required.** TensorRT evaluation and text inference need the exported `*_config.yaml` and `*_tokenizer/` beside the engine. Keep them with the ONNX input so engine generation can copy them automatically.
 - **PyTorch ≥ 2.6 defaults to `torch.load(weights_only=True)`** and rejects the TAO checkpoint’s numpy dtype objects with `_pickle.UnpicklingError`. `TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD=1` is set in `DOCKER_COMMON` above; keep it for `evaluate`, `inference`, and `export`.
 - **`model/hf/` is a snapshot, not an HF hub cache.** Offline packs stage InternVideo2 weights at repo-relative paths (`stage1/L14/L14_dist_1B_stage2/pytorch_model.bin`, `clip/L14/pytorch_model.bin`), while `HUGGINGFACE_HUB_CACHE` expects a `models--<org>--<repo>/snapshots/<sha>/` tree. Leaving `model.vision_encoder` / `model.clip_head` at `null` sends asset resolution to `hf_hub_download` and fails under `HF_HUB_OFFLINE=1` — point both at the files directly.
-- **CI / skill-eval**: stage weights + remapped JSON under `$WORKSPACE_DIR` from S3; do not rely on HuggingFace LFS downloads at eval time.
+- **Offline CI/eval**: stage weights + remapped JSON under `$WORKSPACE_DIR` from S3; do not rely on HuggingFace LFS downloads at eval time.
 
 ## References
 

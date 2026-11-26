@@ -10,7 +10,7 @@ Set the deploy container once at the top of the session — every command below
 uses it:
 
 ```bash
-TAO_DEPLOY_IMAGE=nvcr.io/nvidia/tao/tao-toolkit:7.2.0-deploy  # versions-key: images.tao_toolkit.deploy
+TAO_DEPLOY_IMAGE=nvcr.io/nvidia/tao/tao-toolkit:7.3.0-deploy  # versions-key: images.tao_toolkit.deploy
 ```
 
 ### Generate TensorRT Engine
@@ -129,7 +129,7 @@ Model-specific notes:
 
 **Mounted paths do not exist:** TAO Deploy checks local paths inside the container. Make sure every path in the spec has a matching Docker mount or job artifact mapping.
 
-**Older deploy image OneFormer engine generation failure:** Some 7.0.0 RC
+**Older deploy image OneFormer engine generation failure:** Some older
 deploy images parse the exported OneFormer ONNX with two inputs, `images` and
 `task_tokens`, then assume every input is a 4D image tensor. This causes
 `gen_trt_engine` to fail with `IndexError: Out of bounds` while reading the 2D
